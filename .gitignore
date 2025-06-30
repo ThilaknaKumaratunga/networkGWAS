@@ -1,0 +1,4 @@
+cnn_ready_genotype_subset.csv
+data/genotype.csv
+results/settings/neighborhoods.txt
+cnn_ready_with_pheno.csv

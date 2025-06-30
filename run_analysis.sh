@@ -33,61 +33,61 @@ python3 1_nb_aggregation.py \
 --nbs neighborhoods.txt
 
 
-echo "2. Permuted settings computation..."
+# echo "2. Permuted settings computation..."
 
-python3 2_circPerm_nwPerm.py \
---i $INFOLD \
---g2s $MAPPING \
---bim "$GENOTYPE".bim \
---nw $NETWORK \
---perm $NPERM \
---alpha 0.5 \
---seed 42 \
---onwdir $PERMNW \
---onbdir $PERMNB \
---onw nw_ \
---onb nbs_
-
-
-echo "3. Lrt calculation on the non-permuted setting..."
-
-python3 3_LMM.py \
---genotype "$INFOLD""$GENOTYPE" \
---phenotype "$INFOLD""$PHENO" \
---nbs "$SETTINGS"neighborhoods.txt \
---kernel $KERNEL \
---odir "$ORIGINAL" \
---ofile llr.pkl
-
-echo "4. Lrt calculation on the permuted settings..."
-
-python3 3_LMM.py \
---genotype "$INFOLD""$GENOTYPE" \
---phenotype "$INFOLD""$PHENO" \
---nbs "$PERMNB"nbs_ \
---kernel $KERNEL \
---j 0 $NPERM \
---odir $PERMUTED \
---ofile llr_
+# python3 2_circPerm_nwPerm.py \
+# --i $INFOLD \
+# --g2s $MAPPING \
+# --bim "$GENOTYPE".bim \
+# --nw $NETWORK \
+# --perm $NPERM \
+# --alpha 0.5 \
+# --seed 42 \
+# --onwdir $PERMNW \
+# --onbdir $PERMNB \
+# --onw nw_ \
+# --onb nbs_
 
 
-echo "5. p-values calculation..."
+# echo "3. Lrt calculation on the non-permuted setting..."
 
-python3 4_obtain_pvals.py \
---inpath "$ORIGINAL"llr.pkl \
---inpathperm "$PERMUTED"llr_ \
---nperm $NPERM \
---dirnd $NULLDIR \
---dirpv $PVALDIR \
---fignd null_distr.png \
---figpv qqplot.png \
---outpathnd null_distr.pkl \
---outpathpv pvals.pkl
+# python3 3_LMM.py \
+# --genotype "$INFOLD""$GENOTYPE" \
+# --phenotype "$INFOLD""$PHENO" \
+# --nbs "$SETTINGS"neighborhoods.txt \
+# --kernel $KERNEL \
+# --odir "$ORIGINAL" \
+# --ofile llr.pkl
+
+# echo "4. Lrt calculation on the permuted settings..."
+
+# python3 3_LMM.py \
+# --genotype "$INFOLD""$GENOTYPE" \
+# --phenotype "$INFOLD""$PHENO" \
+# --nbs "$PERMNB"nbs_ \
+# --kernel $KERNEL \
+# --j 0 $NPERM \
+# --odir $PERMUTED \
+# --ofile llr_
 
 
-echo "6. Associated neighborhoods..."
+# # echo "5. p-values calculation..."
 
-python3 5_associated_neighborhoods.py \
---nw "$INFOLD""$NETWORK" \
---pv "$PVALDIR"pvals.pkl \
---q1 $Q1 
+# # python3 4_obtain_pvals.py \
+# # --inpath "$ORIGINAL"llr.pkl \
+# # --inpathperm "$PERMUTED"llr_ \
+# # --nperm $NPERM \
+# # --dirnd $NULLDIR \
+# # --dirpv $PVALDIR \
+# # --fignd null_distr.png \
+# # --figpv qqplot.png \
+# # --outpathnd null_distr.pkl \
+# # --outpathpv pvals.pkl
+
+
+# # echo "6. Associated neighborhoods..."
+
+# # python3 5_associated_neighborhoods.py \
+# # --nw "$INFOLD""$NETWORK" \
+# # --pv "$PVALDIR"pvals.pkl \
+# # --q1 $Q1 

@@ -4,6 +4,17 @@ import torch
 from torch.utils.data import DataLoader, TensorDataset, random_split
 import torch.nn as nn
 import torch.optim as optim
+from sklearn.metrics import accuracy_score
+
+import random
+import numpy as np
+import torch
+
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
 
 # 1. Load data
 df = pd.read_csv("cnn_ready_with_pheno.csv", index_col=0)
@@ -29,38 +40,64 @@ train_ds, test_ds = random_split(dataset, [n_train, n_test])
 train_loader = DataLoader(train_ds, batch_size=16, shuffle=True)
 test_loader = DataLoader(test_ds, batch_size=16)
 
-# 5. Build a simple 1D CNN
-class SimpleCNN(nn.Module):
+import torch
+import torch.nn as nn
+
+class RegularizedImprovedCNN(nn.Module):
     def __init__(self, n_features):
         super().__init__()
-        self.conv1 = nn.Conv1d(1, 16, kernel_size=5, padding=2)
-        self.relu = nn.ReLU()
-        self.pool = nn.MaxPool1d(2)
-        self.fc1 = nn.Linear((n_features//2)*16, 32)
-        self.fc2 = nn.Linear(32, 1)
+        self.conv_block1 = nn.Sequential(
+            nn.Conv1d(1, 32, kernel_size=5, padding=2),
+            nn.BatchNorm1d(32),
+            nn.ReLU(),
+            nn.Dropout2d(0.2),  # spatial dropout
+            nn.Conv1d(32, 32, kernel_size=3, padding=1),
+            nn.BatchNorm1d(32),
+            nn.ReLU(),
+            nn.MaxPool1d(2),
+            nn.Dropout(0.3)
+        )
+        self.conv_block2 = nn.Sequential(
+            nn.Conv1d(32, 64, kernel_size=3, padding=1),
+            nn.BatchNorm1d(64),
+            nn.ReLU(),
+            nn.Dropout2d(0.2),
+            nn.Conv1d(64, 64, kernel_size=3, padding=1),
+            nn.BatchNorm1d(64),
+            nn.ReLU(),
+            nn.MaxPool1d(2),
+            nn.Dropout(0.4)
+        )
+        self.global_pool = nn.AdaptiveAvgPool1d(1)
+        self.fc = nn.Sequential(
+            nn.Linear(64, 32),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(32, 1)
+        )
         
     def forward(self, x):
         x = x.unsqueeze(1)  # (batch, 1, n_features)
-        x = self.conv1(x)
-        x = self.relu(x)
-        x = self.pool(x)
-        x = x.view(x.size(0), -1)
-        x = self.relu(self.fc1(x))
-        return self.fc2(x)
+        x = self.conv_block1(x)
+        x = self.conv_block2(x)
+        x = self.global_pool(x)  # (batch, channels, 1)
+        x = x.view(x.size(0), -1)  # (batch, channels)
+        x = self.fc(x)
+        return x
 
-model = SimpleCNN(X.shape[1])
+model = RegularizedImprovedCNN(X.shape[1])
 
 # 6. Loss and optimizer
 criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 # 7. Training loop
-n_epochs = 20
+n_epochs = 25
 for epoch in range(n_epochs):
     model.train()
     running_loss = 0.0
     for xb, yb in train_loader:
-        optimizer.zero_grad()
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.00025)
         preds = model(xb)
         loss = criterion(preds, yb)
         loss.backward()
@@ -81,3 +118,7 @@ with torch.no_grad():
     true = np.concatenate(all_targets)
     mse = np.mean((pred - true) ** 2)
     print(f"Test MSE: {mse:.4f}")
+    pred_labels = (pred > 0.5).astype(int)
+    true_labels = true.astype(int)
+    acc = accuracy_score(true_labels, pred_labels)
+    print(f"Test Accuracy: {acc:.4f}")
